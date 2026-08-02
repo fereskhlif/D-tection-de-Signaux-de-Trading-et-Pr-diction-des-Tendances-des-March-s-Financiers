@@ -1484,34 +1484,96 @@ function StockDetailPage({ ticker, onBack, favorites, toggleFav, isLoggedIn, onR
   );
 }
 
-// ─── COMPARISON PAGE — no comparison table ────────────────────────────────────
+// ─── COMPARISON PAGE — dynamic data from FastAPI ──────────────────────────────
 
-const PERIODS = ["7J", "30J", "90J"] as const;
-type Period = typeof PERIODS[number];
+const COMP_PERIODS: { label: string; value: number; param: string }[] = [
+  { label: "7J",  value: 7,   param: "7d"  },
+  { label: "30J", value: 30,  param: "30d" },
+  { label: "60J", value: 60,  param: "60d" },
+  { label: "90J", value: 90,  param: "90d" },
+  { label: "6M",  value: 180, param: "6mo" },
+  { label: "1A",  value: 365, param: "1y"  },
+];
 
 function ComparisonPage({ initialTickers = ["AAPL", "MSFT", "NVDA"], plan, onRequirePremium }: { initialTickers?: string[]; plan: Plan; onRequirePremium: (ctx: string, benefit: string) => void }) {
   const isPremium = plan === "premium";
   const maxStocks = isPremium ? 5 : 2;
+
+  // ── state ──────────────────────────────────────────────────────────────────
   const [selected, setSelected] = useState<string[]>(initialTickers.slice(0, maxStocks));
-  const [period, setPeriod] = useState<Period>("30J");
+  const [periodIdx, setPeriodIdx] = useState(1); // default: 30J
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [showCorr, setShowCorr] = useState(false);
-  const n = { "7J": 7, "30J": 30, "90J": 90 }[period];
+  const [apiData, setApiData] = useState<{
+    chartData: { date: string; [ticker: string]: number | string | null }[];
+    statistics: { ticker: string; totalReturn: number; volatility: number; sharpe: number; maxDrawdown: number; sessions: number }[];
+    correlation: { tickerA: string; tickerB: string; value: number }[];
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const compData = useMemo(() => {
-    if (selected.length < 2) return [];
-    const slices = Object.fromEntries(selected.map(t => [t, ALL[t].slice(-n)]));
-    const len = Math.min(...selected.map(t => slices[t].length));
-    return Array.from({ length: len }, (_, i) => { const entry: Record<string, number | string> = { date: slices[selected[0]][i].date }; selected.forEach(t => { entry[t] = Math.round((slices[t][i].close / slices[t][0].close) * 100 * 100) / 100; }); return entry; });
-  }, [selected, n]);
-  const xInterval = compData.length <= 10 ? 0 : Math.ceil(compData.length / 8) - 1;
+  const periodParam = COMP_PERIODS[periodIdx].param;
 
+  // ── fetch ──────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (selected.length < 1) { setApiData(null); return; }
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetch(`/api/compare?tickers=${selected.join(",")}&period=${periodParam}&interval=1d`, { signal: controller.signal })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((raw: { series: { ticker: string; data: { date: string; value: number }[] }[]; statistics: any[]; correlation: { tickerA: string; tickerB: string; value: number }[] }) => {
+        // Build chart rows from backend dates (trading days only)
+        const allDates = new Set<string>();
+        raw.series.forEach(s => s.data.forEach(p => allDates.add(p.date)));
+        const sortedDates = Array.from(allDates).sort();
+
+        const seriesMap: Record<string, Record<string, number>> = {};
+        raw.series.forEach(s => {
+          seriesMap[s.ticker] = {};
+          s.data.forEach(p => { seriesMap[s.ticker][p.date] = p.value; });
+        });
+
+        const chartData = sortedDates.map(date => {
+          const row: { date: string; [k: string]: number | string | null } = { date };
+          raw.series.forEach(s => {
+            const v = seriesMap[s.ticker]?.[date];
+            row[s.ticker] = typeof v === "number" ? v : null;
+          });
+          return row;
+        });
+
+        setApiData({ chartData, statistics: raw.statistics, correlation: raw.correlation });
+      })
+      .catch(err => { if (err.name !== "AbortError") setError(err.message ?? "Erreur réseau"); })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [selected.join(","), periodParam]);
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+  const getCorr = (a: string, b: string) => {
+    if (!apiData) return a === b ? 1 : 0;
+    if (a === b) return 1;
+    const cell = apiData.correlation.find(c => (c.tickerA === a && c.tickerB === b) || (c.tickerA === b && c.tickerB === a));
+    return cell ? cell.value : 0;
+  };
+  const tickColor = (t: string) => STOCK_COLORS[t] ?? "#64748b";
+  const corrBg = (v: number) => v > 0 ? `rgba(16,185,129,${Math.abs(v) * 0.7})` : `rgba(239,68,68,${Math.abs(v) * 0.7})`;
+
+  const xInterval = (apiData?.chartData.length ?? 0) <= 10 ? 0 : Math.ceil((apiData?.chartData.length ?? 1) / 8) - 1;
+
+  // ── render ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <PageHeader title="Comparaison d'actions" sub={`Performance normalisée base 100 — jusqu'à ${maxStocks} actions`}
-        right={<ExportBtn onClick={() => exportCSV(compData as Record<string, string | number>[], "comparaison.csv")} isPremium={isPremium} onRequirePremium={() => onRequirePremium("Débloquez l'export", "Exportez vos comparaisons en CSV.")} />}
+      <PageHeader
+        title="Comparaison d'actions"
+        sub={`Performance normalisée base 0 — jusqu'à ${maxStocks} actions`}
       />
       <div style={{ flex: 1, padding: "24px 32px" }}>
+
+        {/* Plan banner */}
         {!isPremium && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", background: C.amberFaint, border: `1px solid ${C.amber}33`, borderRadius: 8, marginBottom: 20 }}>
             <Lock size={14} style={{ color: C.amber }} />
@@ -1519,59 +1581,156 @@ function ComparisonPage({ initialTickers = ["AAPL", "MSFT", "NVDA"], plan, onReq
             <button onClick={() => onRequirePremium("Débloquez la comparaison avancée", "Comparez jusqu'à 5 actions simultanément.")} style={{ fontSize: 12, padding: "5px 14px", borderRadius: 6, border: `1px solid ${C.amber}`, background: "transparent", color: C.amber, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}><Crown size={11} style={{ display: "inline", marginRight: 4 }} />Passer Premium</button>
           </div>
         )}
+
+        {/* Controls */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 300 }}>
             <div style={{ color: C.muted, fontSize: 10.5, marginBottom: 6 }}>Actions à comparer</div>
-            <StockSelector selected={selected} onChange={setSelected} max={maxStocks} />
+            <StockSelector selected={selected} onChange={v => setSelected(v.slice(0, maxStocks))} max={maxStocks} />
             {selected.length < 2 && <div style={{ color: C.red, fontSize: 10.5, marginTop: 5 }}>Sélectionnez au moins 2 actions.</div>}
           </div>
-          <div><div style={{ color: C.muted, fontSize: 10.5, marginBottom: 6 }}>Période</div><div style={{ display: "flex", gap: 4 }}>{PERIODS.map(p => <button key={p} onClick={() => setPeriod(p)} style={{ fontSize: 12, padding: "7px 14px", borderRadius: 5, cursor: "pointer", border: `1px solid ${period === p ? C.blue : C.border}`, background: period === p ? C.blueFaint : C.card, color: period === p ? C.blue : C.muted }}>{p}</button>)}</div></div>
-          <div><div style={{ color: C.muted, fontSize: 10.5, marginBottom: 6 }}>Options</div><button onClick={() => setShowCorr(v => !v)} style={{ fontSize: 12, padding: "7px 14px", borderRadius: 5, cursor: "pointer", border: `1px solid ${showCorr ? C.purple : C.border}`, background: showCorr ? "rgba(168,85,247,0.12)" : C.card, color: showCorr ? C.purple : C.muted }}>Corrélation</button></div>
+          <div>
+            <div style={{ color: C.muted, fontSize: 10.5, marginBottom: 6 }}>Période</div>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+              {COMP_PERIODS.map((p, i) => (
+                <button key={p.label} onClick={() => setPeriodIdx(i)}
+                  style={{ fontSize: 12, padding: "7px 14px", borderRadius: 5, cursor: "pointer", border: `1px solid ${i === periodIdx ? C.blue : C.border}`, background: i === periodIdx ? C.blueFaint : C.card, color: i === periodIdx ? C.blue : C.muted }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{ color: C.muted, fontSize: 10.5, marginBottom: 6 }}>Options</div>
+            <button onClick={() => setShowCorr(v => !v)}
+              style={{ fontSize: 12, padding: "7px 14px", borderRadius: 5, cursor: "pointer", border: `1px solid ${showCorr ? C.purple : C.border}`, background: showCorr ? "rgba(168,85,247,0.12)" : C.card, color: showCorr ? C.purple : C.muted }}>
+              Corrélation
+            </button>
+          </div>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "rgba(239,68,68,0.1)", border: `1px solid rgba(239,68,68,0.3)`, borderRadius: 8, marginBottom: 16, color: C.red, fontSize: 13 }}>
+            <AlertTriangle size={16} /> Erreur : {error}
+          </div>
+        )}
+
         {selected.length >= 2 && (
           <>
+            {/* Legend toggles */}
             <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-              {selected.map(t => { const isH = hidden.has(t); return <button key={t} onClick={() => setHidden(h => { const n2 = new Set(h); n2.has(t) ? n2.delete(t) : n2.add(t); return n2; })} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, padding: "5px 10px", borderRadius: 5, cursor: "pointer", border: `1px solid ${isH ? C.border : STOCK_COLORS[t] + "66"}`, background: isH ? "transparent" : STOCK_COLORS[t] + "18", color: isH ? C.dim : STOCK_COLORS[t], opacity: isH ? 0.5 : 1 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: STOCK_COLORS[t] }} />{t}</button>; })}
-            </div>
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 16, overflow: "hidden" }}>
-              <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between" }}><span style={{ color: C.text, fontSize: 11.5, fontWeight: 500 }}>Prix normalisé en base 100</span><span style={{ color: C.muted, fontSize: 10.5 }}>Base 100 = premier point de la période</span></div>
-              <div style={{ padding: "12px 4px 8px" }}>
-                <ResponsiveContainer width="100%" height={320}>
-                  <LineChart data={compData} margin={{ top: 5, right: 30, bottom: 5, left: 50 }}>
-                    <CartesianGrid strokeDasharray="3 6" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="date" tick={{ fill: C.muted, fontSize: 9, fontFamily: "JetBrains Mono,monospace" }} tickLine={false} axisLine={{ stroke: C.border }} interval={xInterval} />
-                    <YAxis tick={{ fill: C.muted, fontSize: 9, fontFamily: "JetBrains Mono,monospace" }} tickLine={false} axisLine={false} />
-                    <ReferenceLine y={100} stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" strokeWidth={1} />
-                    <Tooltip contentStyle={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 5, fontSize: 10, fontFamily: "JetBrains Mono,monospace" }} labelStyle={{ color: C.muted }} formatter={(v: number, name: string) => [`${v.toFixed(2)}`, name]} />
-                    {selected.filter(t => !hidden.has(t)).map(t => <Line key={t} type="monotone" dataKey={t} stroke={STOCK_COLORS[t]} dot={false} strokeWidth={1.8} connectNulls />)}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            {/* Performance summary only (no table) */}
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(selected.length, 5)},1fr)`, gap: 12, marginBottom: 16 }}>
               {selected.map(t => {
-                const sm = summ(t), stock = STOCKS.find(s => s.ticker === t)!;
+                const isH = hidden.has(t);
                 return (
-                  <div key={t} style={{ background: C.card, border: `1px solid ${STOCK_COLORS[t]}33`, borderRadius: 8, padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: STOCK_COLORS[t] }} />
-                      <span style={{ fontFamily: "JetBrains Mono,monospace", fontWeight: 700, color: C.text, fontSize: 13 }}>{t}</span>
-                    </div>
-                    <div style={{ fontFamily: "JetBrains Mono,monospace", fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4 }}>${f2(sm.price)}</div>
-                    <div style={{ fontSize: 12, color: sm.chg90d >= 0 ? C.green : C.red, fontFamily: "JetBrains Mono,monospace", marginBottom: 8 }}>{fPct(sm.chg90d)} (90J)</div>
-                    <Badge p={stock.prediction} />
-                  </div>
+                  <button key={t} onClick={() => setHidden(h => { const n2 = new Set(h); n2.has(t) ? n2.delete(t) : n2.add(t); return n2; })}
+                    style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, padding: "5px 10px", borderRadius: 5, cursor: "pointer", border: `1px solid ${isH ? C.border : tickColor(t) + "66"}`, background: isH ? "transparent" : tickColor(t) + "18", color: isH ? C.dim : tickColor(t), opacity: isH ? 0.5 : 1 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: tickColor(t) }} />{t}
+                  </button>
                 );
               })}
             </div>
-            {showCorr && <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}><div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}` }}><span style={{ color: C.text, fontSize: 11.5, fontWeight: 500 }}>Matrice de corrélation (Pearson, 90J)</span></div><div style={{ padding: "20px 24px" }}><CorrelationMatrix tickers={selected} /></div></div>}
+
+            {/* Chart */}
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 16, overflow: "hidden", position: "relative" }}>
+              <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: C.text, fontSize: 11.5, fontWeight: 500 }}>Performance relative (base 0%)</span>
+                <span style={{ color: C.muted, fontSize: 10.5 }}>{apiData?.chartData.length ?? 0} séances</span>
+              </div>
+              {loading && (
+                <div style={{ position: "absolute", inset: 0, background: "rgba(12,21,37,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
+                  <RefreshCw size={22} style={{ color: C.blue, animation: "spin 1s linear infinite" }} />
+                </div>
+              )}
+              <div style={{ padding: "12px 4px 8px" }}>
+                {!loading && apiData?.chartData.length === 0 && (
+                  <div style={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, fontSize: 13 }}>
+                    Aucune donnée disponible pour cette période.
+                  </div>
+                )}
+                {(apiData?.chartData.length ?? 0) > 0 && (
+                  <ResponsiveContainer width="100%" height={320}>
+                    <LineChart data={apiData!.chartData} margin={{ top: 5, right: 30, bottom: 5, left: 40 }}>
+                      <CartesianGrid strokeDasharray="3 6" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="date" tick={{ fill: C.muted, fontSize: 9, fontFamily: "JetBrains Mono,monospace" }} tickLine={false} axisLine={{ stroke: C.border }} interval={xInterval} />
+                      <YAxis tick={{ fill: C.muted, fontSize: 9, fontFamily: "JetBrains Mono,monospace" }} tickLine={false} axisLine={false} tickFormatter={v => `${v > 0 ? "+" : ""}${v}%`} />
+                      <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" strokeWidth={1} />
+                      <Tooltip
+                        contentStyle={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 5, fontSize: 10, fontFamily: "JetBrains Mono,monospace" }}
+                        labelStyle={{ color: C.muted }}
+                        formatter={(v: number, name: string) => [`${v >= 0 ? "+" : ""}${v.toFixed(2)}%`, name]}
+                      />
+                      {selected.filter(t => !hidden.has(t)).map(t => (
+                        <Line key={t} type="monotone" dataKey={t} stroke={tickColor(t)} dot={false} strokeWidth={1.8} connectNulls={false} />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            {/* Statistics cards */}
+            {(apiData?.statistics.length ?? 0) > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(selected.length, 5)}, 1fr)`, gap: 12, marginBottom: 16 }}>
+                {apiData!.statistics.map(stat => (
+                  <div key={stat.ticker} style={{ background: C.card, border: `1px solid ${tickColor(stat.ticker)}33`, borderRadius: 8, padding: "14px 16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: tickColor(stat.ticker) }} />
+                      <span style={{ fontFamily: "JetBrains Mono,monospace", fontWeight: 700, color: C.text, fontSize: 13 }}>{stat.ticker}</span>
+                      <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 600, color: stat.totalReturn >= 0 ? C.green : C.red, fontFamily: "JetBrains Mono,monospace" }}>
+                        {stat.totalReturn >= 0 ? "+" : ""}{stat.totalReturn.toFixed(2)}%
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 8px", fontSize: 11 }}>
+                      <span style={{ color: C.muted }}>Volatilité</span>
+                      <span style={{ color: C.text, fontFamily: "JetBrains Mono,monospace", textAlign: "right" }}>{stat.volatility.toFixed(1)}%</span>
+                      <span style={{ color: C.muted }}>Sharpe</span>
+                      <span style={{ color: C.text, fontFamily: "JetBrains Mono,monospace", textAlign: "right" }}>{stat.sharpe.toFixed(2)}</span>
+                      <span style={{ color: C.muted }}>Max DD</span>
+                      <span style={{ color: C.red, fontFamily: "JetBrains Mono,monospace", textAlign: "right" }}>{stat.maxDrawdown.toFixed(2)}%</span>
+                      <span style={{ color: C.muted }}>Séances</span>
+                      <span style={{ color: C.text, fontFamily: "JetBrains Mono,monospace", textAlign: "right" }}>{stat.sessions}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Correlation matrix */}
+            {showCorr && selected.length >= 2 && (
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}` }}>
+                  <span style={{ color: C.text, fontSize: 11.5, fontWeight: 500 }}>Matrice de corrélation (Pearson)</span>
+                </div>
+                <div style={{ padding: "20px 24px" }}>
+                  <div style={{ display: "flex", marginBottom: 4, paddingLeft: 60 }}>
+                    {selected.map(t => <div key={t} style={{ width: 58, fontSize: 10, color: C.muted, textAlign: "center", fontFamily: "JetBrains Mono,monospace" }}>{t}</div>)}
+                  </div>
+                  {selected.map(a => (
+                    <div key={a} style={{ display: "flex", alignItems: "center", marginBottom: 2 }}>
+                      <div style={{ width: 56, fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono,monospace", flexShrink: 0, paddingRight: 4, textAlign: "right" }}>{a}</div>
+                      {selected.map(b => {
+                        const corr = getCorr(a, b);
+                        const bg = a === b ? "rgba(255,255,255,0.08)" : corrBg(corr);
+                        return (
+                          <div key={b} title={`${a}/${b}: ${corr.toFixed(3)}`}
+                            style={{ width: 58, height: 40, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontFamily: "JetBrains Mono,monospace", color: Math.abs(corr) > 0.5 ? C.text : C.muted, borderRadius: 3, margin: "0 1px" }}>
+                            {corr.toFixed(2)}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
     </div>
   );
 }
+
 
 // ─── ALERTS PAGE ──────────────────────────────────────────────────────────────
 

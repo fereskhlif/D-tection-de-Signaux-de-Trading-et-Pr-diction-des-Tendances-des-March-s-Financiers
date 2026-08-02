@@ -1,0 +1,41 @@
+ticker,name,exchange,sector,industry,country,currency,assetType
+AAPL,Apple Inc.,NASDAQ,Technology,Consumer Electronics,USA,USD,Stock
+MSFT,Microsoft Corporation,NASDAQ,Technology,Software,USA,USD,Stock
+NVDA,NVIDIA Corporation,NASDAQ,Technology,Semiconductors,USA,USD,Stock
+JPM,JPMorgan Chase & Co.,NYSE,Finance,Banks,USA,USD,Stock
+GS,The Goldman Sachs Group Inc.,NYSE,Finance,Capital Markets,USA,USD,Stock
+BNP.PA,BNP Paribas SA,Euronext,Finance,Banks,France,EUR,Stock
+JNJ,Johnson & Johnson,NYSE,Healthcare,Pharmaceuticals,USA,USD,Stock
+UNH,UnitedHealth Group Incorporated,NYSE,Healthcare,Healthcare Plans,USA,USD,Stock
+NVO,Novo Nordisk A/S,NYSE,Healthcare,Pharmaceuticals,Denmark,USD,Stock
+CAT,Caterpillar Inc.,NYSE,Industrials,Farm & Heavy Construction Machinery,USA,USD,Stock
+GE,General Electric Company,NYSE,Industrials,Specialty Industrial Machinery,USA,USD,Stock
+NEE,NextEra Energy Inc.,NYSE,Utilities,Utilities - Regulated Electric,USA,USD,Stock
+DUK,Duke Energy Corporation,NYSE,Utilities,Utilities - Regulated Electric,USA,USD,Stock
+BTC-USD,Bitcoin,Crypto,Cryptocurrency,Global,Global,USD,Crypto
+ETH-USD,Ethereum,Crypto,Cryptocurrency,Global,Global,USD,Crypto
+BNB-USD,Binance Coin,Crypto,Cryptocurrency,Global,Global,USD,Crypto
+SOL-USD,Solana,Crypto,Cryptocurrency,Global,Global,USD,Crypto
+XRP-USD,XRP,Crypto,Cryptocurrency,Global,Global,USD,Crypto
+SPY,SPDR S&P 500 ETF Trust,NYSE Arca,ETF,ETF,USA,USD,ETF
+QQQ,Invesco QQQ Trust,NASDAQ,ETF,ETF,USA,USD,ETF
+TSLA,Tesla Inc.,NASDAQ,Consumer Cyclical,Auto Manufacturers,USA,USD,Stock
+AMZN,Amazon.com Inc.,NASDAQ,Consumer Cyclical,Internet Retail,USA,USD,Stock
+GOOGL,Alphabet Inc.,NASDAQ,Communication Services,Internet Content & Information,USA,USD,Stock
+META,Meta Platforms Inc.,NASDAQ,Communication Services,Internet Content & Information,USA,USD,Stock
+AIR.PA,Airbus SE,Euronext,Industrials,Aerospace & Defense,France,EUR,Stock
+MC.PA,LVMH,Euronext,Consumer Cyclical,Luxury Goods,France,EUR,Stock
+TTE.PA,TotalEnergies SE,Euronext,Energy,Oil & Gas,France,EUR,Stock
+SAN.PA,Sanofi,Euronext,Healthcare,Pharmaceuticals,France,EUR,Stock
+ASML,ASML Holding N.V.,NASDAQ,Technology,Semiconductor Equipment,Netherlands,USD,Stock
+SAP,SAP SE,NYSE,Technology,Software,Germany,USD,Stock
+OR.PA,L'Oréal S.A.,Euronext,Consumer Defensive,Household & Personal Products,France,EUR,Stock
+SU.PA,Schneider Electric S.E.,Euronext,Industrials,Specialty Industrial Machinery,France,EUR,Stock
+SIE.DE,Siemens Aktiengesellschaft,XETRA,Industrials,Specialty Industrial Machinery,Germany,EUR,Stock
+V,Visa Inc.,NYSE,Finance,Credit Services,USA,USD,Stock
+MA,Mastercard Incorporated,NYSE,Finance,Credit Services,USA,USD,Stock
+HD,The Home Depot Inc.,NYSE,Consumer Cyclical,Home Improvement Retail,USA,USD,Stock
+PG,The Procter & Gamble Company,NYSE,Consumer Defensive,Household & Personal Products,USA,USD,Stock
+XOM,Exxon Mobil Corporation,NYSE,Energy,Oil & Gas,USA,USD,Stock
+GLD,SPDR Gold Trust,NYSE Arca,ETF,Commodity ETF,USA,USD,ETF
+USO,United States Oil Fund LP,NYSE Arca,ETF,Commodity ETF,USA,USD,ETF
