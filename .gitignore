@@ -1,57 +1,322 @@
-# Dependencies
-node_modules/
-.pnpm-store/
+# ============================================================
+# AlphaML — .gitignore
+# ============================================================
 
-# Build outputs
-/dist/
-/build/
-/.vite/
-
-# Environment files
+# === SECRETS (NEVER COMMIT) =================================
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# Editor/OS files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Test coverage
-coverage/
-
-# Temporary files
-*.tmp
-*.temp
-
-# Python / backend
-backend/.venv/
-.venv/
+# === PYTHON ==================================================
 __pycache__/
 **/__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.pyc
-*.pyo
-*.pyd
+.venv/
+venv/
+env/
+.python-version
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 pip-wheel-metadata/
-*.egg-info/
-*.eggs/
-.python-version
 
-# Logs
+# === NODE / FRONTEND =========================================
+node_modules/
+.pnpm-store/
+dist/
+build/
+/.vite/
+
+# === LOGS ====================================================
 *.log
+logs/
+backend/app/infrastructure/v13_2/logs/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+# === CACHE (regenerated at runtime) ==========================
+backend/app/infrastructure/v13_2/cache/
+Modeles AI/v12_9_trading_system/cache/
+Modeles AI/v12_cache/
+Modeles AI/v12_3/cache/
+Modeles AI/v12_1/cache/
+
+# === DATABASES ===============================================
+backend/alphaml.db
+backend/finance_dashboard.db
+*.db
+*.sqlite
+
+# === LARGE DATASETS (not needed for inference) ===============
+Modeles AI/dataset_v12_enriched.csv
+Modeles AI/dataset_ml_finance_complet.csv
+Modeles AI/dataset_ml_finance_complet_backup.csv
+Modeles AI/v12_1/data/dataset_v12_1.csv
+Modeles AI/v12_1/data/dataset_v12_1.parquet
+Modeles AI/*.csv
+Modeles AI/*.parquet
+Modeles AI/*.npy
+Modeles AI/dataset_yfinance.xls
+
+# === HISTORICAL / EXPERIMENTAL MODELS (not used in prod) ====
+Modeles AI/trading_model_output/
+Modeles AI/trading_model_output_v2/
+Modeles AI/trading_model_v11.4/
+Modeles AI/trading_model_v3/
+Modeles AI/trading_model_v4/
+Modeles AI/trading_model_v7/
+Modeles AI/trading_model_v7_2/
+Modeles AI/trading_model_v8/
+Modeles AI/trading_model_v8.1/
+Modeles AI/trading_model_v9.0/
+Modeles AI/trading_model_v12/
+Modeles AI/v11_5/
+Modeles AI/v11_6/
+Modeles AI/v11_6_1/
+Modeles AI/v12_2/
+Modeles AI/v12_4/
+Modeles AI/v12_5/
+Modeles AI/v12_6/
+Modeles AI/v12_7_regression/
+Modeles AI/v13_0_strategy_optimization/
+Modeles AI/v13_1_strategy_enhanced/
+Modeles AI/v13_3_3/
+Modeles AI/v13_4/
+Modeles AI/v13_6/
+Modeles AI/v13_9/
+Modeles AI/v13_10/
+Modeles AI/v13_10_1/
+Modeles AI/v13_10_2/
+Modeles AI/v13_11/
+Modeles AI/v13_12/
+Modeles AI/v13_13/
+Modeles AI/v13_14/
+Modeles AI/v13_15/
+Modeles AI/v13_16/
+Modeles AI/v13_17/
+Modeles AI/v13_18/
+Modeles AI/v13_19/
+Modeles AI/v13_20/
+Modeles AI/v13_21/
+Modeles AI/v13_22/
+Modeles AI/v13_22_audit_051/
+Modeles AI/v13_23/
+Modeles AI/v13_23_1/
+Modeles AI/v13_23_x/
+Modeles AI/v13_24/
+Modeles AI/v13_25/
+Modeles AI/v13_26/
+Modeles AI/v13_27/
+Modeles AI/v13_28/
+Modeles AI/v13_29/
+Modeles AI/v13_30/
+Modeles AI/v13_31/
+Modeles AI/v13_32/
+Modeles AI/v13_33/
+Modeles AI/v13_34/
+Modeles AI/v13_35/
+Modeles AI/v14/
+Modeles AI/v14_1/
+Modeles AI/v14_2/
+Modeles AI/v14_3/
+Modeles AI/v7/
+
+# === EXPERIMENTAL PHASE RESULTS (v13_8 research) ============
+Modeles AI/v13_8/phase43/
+Modeles AI/v13_8/phase44/
+Modeles AI/v13_8/phase45/
+Modeles AI/v13_8/phase46/
+Modeles AI/v13_8/phase47/
+Modeles AI/v13_8/phase48/
+Modeles AI/v13_8/phase49/
+Modeles AI/v13_8/phase53/
+Modeles AI/v13_8/phase54/
+Modeles AI/v13_8/phase55/
+Modeles AI/v13_8/phase56/
+Modeles AI/v13_8/experiments/
+Modeles AI/v13_8/results/
+Modeles AI/v13_8/audit/
+Modeles AI/v13_8/reports/
+Modeles AI/v13_8/v14_h5_phase43_20/
+Modeles AI/v13_8/v14_h5_phase43_21/
+
+# Keep Phase51 (paper trading ledger) and Phase52 (class mapping fix)
+# (included explicitly - do NOT add them to gitignore)
+
+# === ARCHIVE (rejected/old experiments) ======================
+Modeles AI/v13_3/experiments/archive/
+Modeles AI/v13_5/ablation/
+Modeles AI/v13_5/experiments/
+Modeles AI/v13_5/optuna/
+Modeles AI/v13_5/phase34/
+Modeles AI/v13_5/phase35/
+Modeles AI/v13_5/phase40/
+Modeles AI/v13_5/reports/
+Modeles AI/v13_5/logs/
+Modeles AI/v13_5/audit/
+Modeles AI/v13_7/audit/
+Modeles AI/v13_7/models/
+Modeles AI/v13_7/optuna/
+Modeles AI/v13_7/phase37/
+Modeles AI/v13_7/phase39/
+Modeles AI/v13_7/phase41/
+Modeles AI/v13_7/phase42/
+Modeles AI/v13_7/reports/
+Modeles AI/v13_7/results/
+Modeles AI/v13_7/train/
+Modeles AI/v13_7/validation/
+
+# === ROOT-LEVEL SCRIPTS (research) ===========================
+analyze_confidence_bins.py
+audit_baisse_v13_3.py
+audit_oof.py
+audit_output.txt
+evaluate_confidence_v13_3.py
+evaluate_new_rule.py
+fix_charts.py
+fix_detail_page.py
+edit_app.py
+test_inference_v13_3.py
+test_inference_v13_3_raw.py
+test_stability.py
+test_v13_3_2_integration.py
+offline_evaluation_new_rule.json
+rapport_audit_confiance_v13_3.md
+REPORT_DECISION_CONFIDENCE_V13_3_2.md
+REPORT_FINAL_V13_3_2_INTEGRATION.md
+REPORT_PHASE42_CONFIDENCE_DISTRIBUTION.md
+
+# === BACKEND SCRATCH TESTS ===================================
+backend/test_hybrid.py
+backend/test_smtp_direct.py
+backend/test_send_reset.py
+backend/test_yf.py
+backend/test_load_calibrator.py
+backend/test_history_e2e.py
+backend/audit_v13_3.py
+backend/rebuild_calibrator_v13_3.py
+
+# === OS / EDITOR =============================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
+*.temp
+*.swp
+
+# === JUPYTER =================================================
+.ipynb_checkpoints/
+Modeles AI/.ipynb_checkpoints/
+
+# === CATBOOST (not used in production) =======================
+catboost_info/
+Modeles AI/catboost_info/
+
+# === MISC ====================================================
+*.docx
+Modeles AI/*.docx
+Modeles AI/Untitled.ipynb
+
+# === RUNTIME FILES ===
+Modeles AI/v13_8/phase51/paper_trading_predictions.csv
+
+# ============================================================
+# === EXPLICIT NEW RULES FROM DRY RUN ========================
+# ============================================================
+
+# Ignorer tous les fichiers de recherche a la racine de Modeles AI
+Modeles AI/*.py
+Modeles AI/*.json
+Modeles AI/*.md
+Modeles AI/*.txt
+
+# S'assurer de conserver le dataset de fallback
+
+
+# Ignorer les rapports dynamiques generes par le backend v13_2
+backend/app/infrastructure/v13_2/reports/
+backend/app/infrastructure/v13_2/logs/
+backend/app/infrastructure/v13_2/metrics/
+backend/app/infrastructure/v13_2/cache/
+
+# Ignorer les rapports d'audit isoles a la racine du backend
+backend/*.md
+!backend/README.md
+
+# PROTEGER EXPLICITEMENT LES MODELES DE PRODUCTION ET LEURS DEPENDANCES
+!Modeles AI/v13_5/production/best_model_v13_5.joblib
+!Modeles AI/v13_5/production/v13_5_feature_pipeline.joblib
+!Modeles AI/v13_5/production/v13_5_model_metadata.json
+!Modeles AI/v13_5/production/V13.5_FEATURE_MANIFEST.json
+!Modeles AI/v13_7/phase38/v13_7_meta_model.joblib
+!Modeles AI/v13_3_2/experiments/best_model_v13_3_2.joblib
+!Modeles AI/v13_3_2/experiments/best_config_v13_3_2.json
+!Modeles AI/v13_2/calibration/calibrator.joblib
+!Modeles AI/v12_8_conditional_regression/models/lgb_regressor_bear_v12_8.joblib
+!Modeles AI/v12_8_conditional_regression/models/lgb_regressor_bull_v12_8.joblib
+!Modeles AI/v12_8_conditional_regression/models/lgb_regressor_stable_v12_8.joblib
+
+# Ignorer partout dans Modeles AI (recursif)
+Modeles AI/**/*.py
+Modeles AI/**/*.json
+Modeles AI/**/*.md
+Modeles AI/**/*.txt
+Modeles AI/**/*.csv
+
+# Et re-proteger explicitement les fichiers V13.5 et autres:
+
+!Modeles AI/v13_5/production/best_model_v13_5.joblib
+!Modeles AI/v13_5/production/v13_5_feature_pipeline.joblib
+!Modeles AI/v13_5/production/v13_5_model_metadata.json
+!Modeles AI/v13_5/production/V13.5_FEATURE_MANIFEST.json
+!Modeles AI/v13_7/phase38/v13_7_meta_model.joblib
+!Modeles AI/v13_3_2/experiments/best_model_v13_3_2.joblib
+!Modeles AI/v13_3_2/experiments/best_config_v13_3_2.json
+!Modeles AI/v13_2/calibration/calibrator.joblib
+!Modeles AI/v12_8_conditional_regression/models/lgb_regressor_bear_v12_8.joblib
+!Modeles AI/v12_8_conditional_regression/models/lgb_regressor_bull_v12_8.joblib
+!Modeles AI/v12_8_conditional_regression/models/lgb_regressor_stable_v12_8.joblib
+
+# Et re-proteger explicitement les DOSSIERS python necessaires:
+!Modeles AI/v12_1/
+!Modeles AI/v12_3/
+!Modeles AI/v12_8_conditional_regression/
+!Modeles AI/v12_9_trading_system/
+!Modeles AI/v13_2/
+!Modeles AI/v13_3/
+!Modeles AI/v13_8/
+
+# Ignorer tous les dossiers generes a l'interieur des sous-dossiers
+Modeles AI/**/cache/
+Modeles AI/**/reports/
+Modeles AI/**/logs/
+Modeles AI/**/metrics/
+
+# ==========================================
+# ALPHAML - HISTORICAL REPORTS / TESTS
+# ==========================================
+
+backend/app/infrastructure/v13_2/reports/
+backend/app/infrastructure/v13_2/tests/
+
+# Generated caches
+**/__pycache__/
+**/.pytest_cache/
+**/cache/
+**/logs/
+**/metrics/
+
+# === OLD AI VERSIONS — NOT FOR GITHUB ===
+Modeles AI/v12_3/
+Modeles AI/v12_8_conditional_regression/
+Modeles AI/v13_2/
+Modeles AI/v13_3/
+Modeles AI/v13_3_2/

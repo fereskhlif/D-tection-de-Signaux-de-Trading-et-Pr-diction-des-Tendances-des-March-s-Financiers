@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Activity, Brain } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 import { StatCard } from "../components/dashboard/StatCard";
 import { SearchBar } from "../components/dashboard/SearchBar";
 import { FilterButtons } from "../components/dashboard/FilterButtons";
@@ -6,7 +6,6 @@ import { PredictionTable } from "../components/dashboard/PredictionTable";
 import { useStocks } from "../hooks/useStocks";
 import { useSearch } from "../hooks/useSearch";
 import { useFilter } from "../hooks/useFilter";
-import { MODEL_ACCURACY } from "../utils/data";
 
 interface DashboardProps {
   onStockClick: (ticker: string) => void;
@@ -43,13 +42,6 @@ export default function Dashboard({ onStockClick }: DashboardProps) {
           sub={`${((bearish / stocks.length) * 100).toFixed(0)}% du portefeuille`}
           icon={<TrendingDown size={14} />}
           iconColor="text-danger"
-        />
-        <StatCard
-          label="Précision du modèle"
-          value={`${MODEL_ACCURACY.overall}%`}
-          sub={`↑${MODEL_ACCURACY.weekly}% cette semaine`}
-          icon={<Brain size={14} />}
-          iconColor="text-primary"
         />
       </div>
 

@@ -22,7 +22,7 @@ export function Navbar({ onMenuToggle, alerts, onDismissAlert }: NavbarProps) {
           <MenuToggle onClick={onMenuToggle} />
           <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            Modèle actif — XGBoost v3.2
+            Modèle actif en production
           </div>
         </div>
 

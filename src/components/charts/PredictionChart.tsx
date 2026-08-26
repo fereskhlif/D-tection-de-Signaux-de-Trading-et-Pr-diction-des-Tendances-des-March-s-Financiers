@@ -35,7 +35,7 @@ const TooltipContent = ({ active, payload, label }: any) => {
 export function PriceHistoryChart({ history, forecast = [], color = CHART_COLOR, ticker }: PriceHistoryChartProps) {
   const histData = history.map(p => ({ date: p.date, price: p.close, isForecast: false }));
   const forecastData = forecast.map(p => ({
-    date: p.day, price: p.price, lower: p.lower, upper: p.upper, isForecast: true,
+    date: p.day ?? p.date, price: p.price, lower: p.lower, upper: p.upper, isForecast: true,
   }));
   const junction = histData.length > 0 ? [{
     date: histData[histData.length - 1].date,

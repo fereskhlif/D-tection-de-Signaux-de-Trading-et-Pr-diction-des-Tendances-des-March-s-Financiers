@@ -1,0 +1,22 @@
+{
+    "version": "V13.5",
+    "algorithm": "LightGBM",
+    "target": "Target B",
+    "feature_count": 51,
+    "training_samples": 81005,
+    "training_date": "2026-08-15T11:48:26.782504",
+    "hyperparameters": {
+        "learning_rate": 0.018563358072587296,
+        "num_leaves": 116,
+        "max_depth": 12,
+        "min_child_samples": 55,
+        "feature_fraction": 0.80539009768532,
+        "bagging_fraction": 0.9748144607072986,
+        "lambda_l1": 1.4999966545049656e-07,
+        "lambda_l2": 3.9765594215268166e-05,
+        "max_bin": 384,
+        "bagging_freq": 1
+    },
+    "feature_manifest": "V13.5_FEATURE_MANIFEST.json",
+    "production_model": true
+}

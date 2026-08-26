@@ -36,24 +36,28 @@ export function useComparison() {
 
     try {
       const result = await comparisonService.getComparison(selected, periodString, "1d", abortControllerRef.current.signal);
-      console.debug("fetchComparison received", { tickers: selected, periodString, result });
+      console.debug("[Comparison] response received", { tickers: selected, periodString, series: result?.series?.length });
       setData(result);
       setError(null);
+      setLoading(false);
     } catch (err: any) {
       if (err.name === "CanceledError" || err.message === "canceled") {
-        return; // aborted
-      }
-      if (retryCount < 1) {
-        // Retry once on failure
-        setTimeout(() => fetchComparison(retryCount + 1), 1000);
+        // Requête annulée volontairement (changement de paramètres) — ne pas modifier les états
         return;
       }
-      console.error("fetchComparison error:", err.response?.status, err.response?.data || err.message || err);
-      setError(err.response?.data?.error || err.message || "Erreur réseau");
-    } finally {
+      if (retryCount < 1) {
+        // Réessai unique — loading reste true pendant la tentative
+        console.warn("[Comparison] Retry attempt 1 after error:", err.message);
+        setTimeout(() => fetchComparison(retryCount + 1), 1500);
+        return;
+      }
+      // Échec définitif
+      console.error("[Comparison] error:", err.response?.status, err.response?.data || err.message || err);
+      setError(err.response?.data?.detail || err.response?.data?.error || err.message || "Erreur réseau");
       setLoading(false);
     }
   }, [selected.join(","), periodString]);
+
 
   useEffect(() => {
     fetchComparison();

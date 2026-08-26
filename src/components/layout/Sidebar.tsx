@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router";
 import {
   LayoutDashboard, BarChart2, Layers, Target,
-  Building2, Clock, Settings, Activity, X, Menu,
+  Building2, Clock, Activity, X, Menu,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { path: "/predictions", label: "Prédictions", icon: Target },
   { path: "/sectors", label: "Secteurs", icon: Building2 },
   { path: "/history", label: "Historique", icon: Clock },
-  { path: "/settings", label: "Paramètres", icon: Settings },
+
 ];
 
 interface SidebarProps {
@@ -56,7 +56,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </div>
         <div>
           <div className="text-sm font-bold text-foreground">AlphaML</div>
-          <div className="text-[10px] text-muted-foreground">Predict Engine v3.2</div>
+          <div className="text-[10px] text-muted-foreground">Predict Engine</div>
         </div>
         {/* Mobile close */}
         <button

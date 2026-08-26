@@ -20,7 +20,11 @@ from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.exceptions import AlphaMLBaseError
-from app.routers import comparison, health
+from app.routers import comparison, health, market, predictions, stock_detail, auth
+from app.database import Base, engine
+from app.models.user import User, PasswordResetToken
+from app.models.historique import Historique
+from app.models.favorite import Favorite
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Configuration du logging
@@ -53,6 +57,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Initialisation au démarrage et nettoyage à l'arrêt."""
     settings = get_settings()
     _configure_logging(settings.log_level)
+    
+    # Initialize Database Tables
+    Base.metadata.create_all(bind=engine)
+    
     logger.info("=" * 60)
     logger.info("AlphaML Backend v%s démarré", settings.app_version)
     logger.info("Host: %s | Port: %s", settings.host, settings.port)
@@ -86,7 +94,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -119,7 +127,14 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
 # ──────────────────────────────────────────────────────────────────────────────
 
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(comparison.router)
+app.include_router(predictions.router)
+app.include_router(market.router)
+app.include_router(stock_detail.router)
+from app.routers import historique, favorites
+app.include_router(historique.router)
+app.include_router(favorites.router)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Lancement direct (optionnel)

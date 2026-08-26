@@ -1,17 +1,12 @@
-import { useState, useCallback } from "react";
-import type { Stock } from "../types";
-import { getAllStocks, toggleFavorite } from "../services/predictionService";
+/**
+ * useStocks — Délègue au StocksContext qui charge les données réelles.
+ *
+ * L'API publique est conservée (stocks, toggleFavorite, refresh)
+ * pour ne pas modifier les composants consommateurs.
+ */
+import { useStocksContext } from "../context/StocksContext";
 
 export function useStocks() {
-  const [stocks, setStocks] = useState<Stock[]>(() => getAllStocks());
-
-  const handleToggleFavorite = useCallback((id: string) => {
-    setStocks(toggleFavorite(id));
-  }, []);
-
-  const refresh = useCallback(() => {
-    setStocks(getAllStocks());
-  }, []);
-
-  return { stocks, toggleFavorite: handleToggleFavorite, refresh };
+  const { stocks, toggleFavorite, refresh, loading } = useStocksContext();
+  return { stocks, toggleFavorite, refresh, loading };
 }

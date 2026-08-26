@@ -1,12 +1,13 @@
 import { useState, lazy, Suspense } from "react";
 import {
   LayoutDashboard, BarChart2, Layers, Target,
-  Building2, Clock, Settings, Activity,
+  Building2, Clock, Activity,
   Bell, X, TrendingUp, TrendingDown, Minus, Menu,
-  LogIn, Star, Crown, LogOut,
+  LogIn, Star, Crown, LogOut, RefreshCw,
 } from "lucide-react";
-import { ALERTS, STOCKS } from "./utils/data";
+import { ALERTS } from "./utils/data";
 import type { Alert, Plan } from "./types";
+import { StocksProvider, useStocksContext } from "./context/StocksContext";
 
 // ── Lazy pages ────────────────────────────────────────────────────────────────
 const DashboardPage = lazy(() => import("./pages/Dashboard"));
@@ -15,9 +16,10 @@ const ComparisonPage = lazy(() => import("./pages/Comparison"));
 const PredictionsPage = lazy(() => import("./pages/Predictions"));
 const SectorsPage = lazy(() => import("./pages/Sectors"));
 const HistoryPage = lazy(() => import("./pages/History"));
-const SettingsPage = lazy(() => import("./pages/Settings"));
 
-type Page = "dashboard" | "stocks" | "comparison" | "predictions" | "sectors" | "history" | "settings";
+const StockDetailsPage = lazy(() => import("./pages/StockDetails"));
+
+type Page = "dashboard" | "stocks" | "comparison" | "predictions" | "sectors" | "history" | "stockDetails";
 
 const NAV: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,7 +28,7 @@ const NAV: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: "predictions", label: "Prédictions", icon: Target },
   { id: "sectors", label: "Secteurs", icon: Building2 },
   { id: "history", label: "Historique", icon: Clock },
-  { id: "settings", label: "Paramètres", icon: Settings },
+
 ];
 
 const PAGE_TITLES: Record<Page, { title: string; sub: string }> = {
@@ -36,7 +38,8 @@ const PAGE_TITLES: Record<Page, { title: string; sub: string }> = {
   predictions: { title: "Prédictions", sub: "Prévisions IA à horizon configurable" },
   sectors: { title: "Secteurs", sub: "Performance et répartition sectorielle" },
   history: { title: "Historique", sub: "Suivi des prédictions passées" },
-  settings: { title: "Paramètres", sub: "Préférences et compte utilisateur" },
+
+  stockDetails: { title: "Détails de l'action", sub: "Analyse approfondie" },
 };
 
 // ── Auth modal ────────────────────────────────────────────────────────────────
@@ -134,8 +137,9 @@ function PageLoading() {
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────────
-export default function App() {
+function App() {
   const [page, setPage] = useState<Page>("dashboard");
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("Utilisateur");
@@ -143,9 +147,7 @@ export default function App() {
   const [authView, setAuthView] = useState<"login" | "register" | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>(ALERTS);
   const [bellOpen, setBellOpen] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>(
-    STOCKS.filter(s => s.isFavorite).map(s => s.ticker)
-  );
+  const [favorites, setFavorites] = useState<string[]>(["AAPL", "NVDA", "NVO"]);
 
   const handleLogin = (name: string, plan: Plan) => {
     setUserName(name);
@@ -265,6 +267,9 @@ export default function App() {
             <p className="text-[10.5px] text-muted-foreground truncate hidden sm:block">{sub}</p>
           </div>
 
+          {/* Bouton Actualiser */}
+          <RefreshButton />
+
           {/* Bell (logged in only) */}
           {isLoggedIn && (
             <div className="relative">
@@ -333,10 +338,13 @@ export default function App() {
         <main className="flex-1 overflow-y-auto">
           <Suspense fallback={<PageLoading />}>
             {page === "dashboard" && (
-              <DashboardPage onStockClick={() => setPage("stocks")} />
+              <DashboardPage onStockClick={(ticker) => { setSelectedTicker(ticker); setPage("stockDetails"); }} />
             )}
             {page === "stocks" && (
-              <StocksPage onStockClick={() => {}} />
+              <StocksPage onStockClick={(ticker) => { setSelectedTicker(ticker); setPage("stockDetails"); }} />
+            )}
+            {page === "stockDetails" && selectedTicker && (
+              <StockDetailsPage ticker={selectedTicker} onBack={() => setPage("stocks")} />
             )}
             {page === "comparison" && <ComparisonPage />}
             {page === "predictions" && <PredictionsPage />}
@@ -347,16 +355,6 @@ export default function App() {
                 favorites={favorites}
                 plan={plan}
                 onLogin={() => setAuthView("login")}
-              />
-            )}
-            {page === "settings" && (
-              <SettingsPage
-                isLoggedIn={isLoggedIn}
-                userName={userName}
-                plan={plan}
-                onLogin={() => setAuthView("login")}
-                onLogout={handleLogout}
-                onUpgrade={() => {}}
               />
             )}
           </Suspense>
@@ -377,5 +375,42 @@ export default function App() {
         <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
       )}
     </div>
+  );
+}
+
+// ── Bouton Actualiser (accède au contexte) ────────────────────────────────────
+function RefreshButton() {
+  const { refresh, loading, lastUpdated } = useStocksContext();
+  const [spinning, setSpinning] = useState(false);
+
+  const handleRefresh = () => {
+    setSpinning(true);
+    refresh();
+    setTimeout(() => setSpinning(false), 2000);
+  };
+
+  const timeStr = lastUpdated
+    ? lastUpdated.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  return (
+    <button
+      onClick={handleRefresh}
+      disabled={loading}
+      title={timeStr ? `Dernière MAJ : ${timeStr}` : "Actualiser les données"}
+      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <RefreshCw size={12} className={spinning || loading ? "animate-spin" : ""} />
+      <span className="hidden sm:inline">Actualiser</span>
+    </button>
+  );
+}
+
+// ── Wrapper principal avec le Provider ────────────────────────────────────────
+export default function AppRoot() {
+  return (
+    <StocksProvider>
+      <App />
+    </StocksProvider>
   );
 }

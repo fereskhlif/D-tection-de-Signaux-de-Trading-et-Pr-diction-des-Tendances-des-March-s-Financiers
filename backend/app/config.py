@@ -38,6 +38,21 @@ class Settings(BaseSettings):
     search_limit: int = 20
     yahoo_timeout: int = 15  # secondes
 
+    # Auth & Database
+    database_url: str = "mysql+pymysql://root:@localhost:3306/alphaml"
+    jwt_secret_key: str = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24 * 7 # 7 days
+    google_client_id: str | None = None
+
+    # SMTP Email
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str | None = None
+    frontend_url: str = "http://localhost:5173"
+
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse la chaîne CORS_ORIGINS en liste."""

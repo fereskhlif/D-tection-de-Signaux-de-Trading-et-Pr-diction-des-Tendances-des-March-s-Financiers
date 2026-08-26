@@ -30,15 +30,27 @@ export interface PredictionsApi {
 }
 
 // Base URL for future integration
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "/api/v1";
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 // Generic fetch helper — ready for real API calls
 export async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
   try {
+    const token = localStorage.getItem("access_token");
+    const headers = new Headers({ "Content-Type": "application/json", ...options?.headers });
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: { "Content-Type": "application/json", ...options?.headers },
       ...options,
+      headers,
     });
+    
+    if (res.status === 401) {
+      localStorage.removeItem("access_token");
+      // Handle logout/redirect at context level
+    }
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return { data, status: "success" };
@@ -46,3 +58,23 @@ export async function apiFetch<T>(endpoint: string, options?: RequestInit): Prom
     return { data: null as unknown as T, status: "error", message: String(err) };
   }
 }
+
+export interface ModelInfo {
+  model_name: string;
+  model_version: string;
+  model_type: string;
+  prediction_horizon: string;
+  feature_count: number;
+  meta_model: string | null;
+  calibrator: string | null;
+  conditional_regressors: string | null;
+  selective_prediction: boolean;
+  performance: number | null;
+}
+
+export const aiModelService = {
+  getModelInfo: async (): Promise<ApiResponse<ModelInfo>> => {
+    return apiFetch<ModelInfo>('/model/info');
+  }
+};
+
