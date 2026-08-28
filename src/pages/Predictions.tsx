@@ -226,7 +226,7 @@ export default function Predictions() {
             const pct = lastPrice > 0 ? ((finalForecast - lastPrice) / lastPrice * 100).toFixed(1) : "0.0";
             const isUp = finalForecast >= lastPrice;
 
-            const { signal, confidence, decision, risk_level, trade_allowed, reason, probabilities, model_prediction } = data.trend_prediction;
+            const { signal, confidence, confidence_level, decision, risk_level, trade_allowed, reason, probabilities, model_prediction } = data.trend_prediction;
             const { take_profit, stop_loss, risk_reward } = data.risk_management;
             const signalClass = signal === "Hausse" ? "text-success"
               : signal === "Baisse" ? "text-danger"
@@ -265,8 +265,11 @@ export default function Predictions() {
                       <span className={`font-bold ${signalClass}`}>{signal}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-muted-foreground mb-1">Confiance P(correct)</span>
-                      <span className="font-mono font-bold text-foreground">{(confidence * 100).toFixed(2)}%</span>
+                      <span className="text-muted-foreground mb-1">Force du signal</span>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-mono font-bold text-foreground">{(confidence * 100).toFixed(1)}%</span>
+                        {confidence_level && <span className="text-[10px] font-bold text-muted-foreground">{confidence_level}</span>}
+                      </div>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-muted-foreground mb-1">Décision Router</span>

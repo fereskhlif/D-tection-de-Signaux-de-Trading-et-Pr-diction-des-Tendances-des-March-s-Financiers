@@ -524,7 +524,7 @@ class AIService:
                 # ── 1. Probabilités BRUTES → Décision V13.5 (Argmax) ───────────────────
                 raw_probs_list = [float(p) for p in clf_probs[0]]
 
-                logger.info("[PROBABILITY SOURCE] Décision=RAW | Affichage=RAW | Confiance=META V13.7")
+                logger.info("[PROBABILITY SOURCE] Décision=RAW | Affichage=RAW | Confiance=SIGNAL_STRENGTH")
                 logger.info("[RAW PROBABILITIES] (idx: 0=Baisse, 1=Stabilite, 2=Hausse)")
                 logger.info(f"  Baisse    (idx=0) = {raw_probs_list[0]:.4f}")
                 logger.info(f"  Stabilite (idx=1) = {raw_probs_list[1]:.4f}")
@@ -551,32 +551,18 @@ class AIService:
                 raw_margin       = confidence_score_raw - max(raw_other_probs) if raw_other_probs else 0.0
                 raw_entropy      = scipy.stats.entropy(raw_probs_list)
                 
-                # Meta-Confidence V13.7
-                if self.model_version_loaded == "V13.5" and self.meta_model is not None:
-                    log_margin = np.log1p(raw_margin)
-                    X_meta = np.array([[
-                        raw_probs_list[0], 
-                        raw_probs_list[1], 
-                        raw_probs_list[2], 
-                        confidence_score_raw,
-                        raw_margin, 
-                        raw_entropy,
-                        log_margin
-                    ]])
-                    try:
-                        meta_probs = self.meta_model.predict_proba(X_meta)
-                        confidence_score = float(meta_probs[0][1])  # P(correct)
-                        confidence_type = "P(correct)"
-                        confidence_model = "V13.7"
-                    except Exception as e:
-                        logger.error(f"Meta-Model failed: {e}")
-                        confidence_score = confidence_score_raw
-                        confidence_type = "RAW"
-                        confidence_model = "None"
-                else:
-                    confidence_score = confidence_score_raw
-                    confidence_type = "RAW"
-                    confidence_model = "None"
+                # ── Nouveau Score de Confiance (Force du Signal) ──
+                p_max = max(raw_probs_list)
+                p_second = sorted(raw_probs_list)[-2]
+                margin = p_max - p_second
+
+                raw_signal_strength = 0.7 * p_max + 0.3 * margin
+                display_confidence = 0.50 + 0.50 * raw_signal_strength
+                display_confidence = min(1.0, max(0.0, display_confidence))
+
+                confidence_score = display_confidence
+                confidence_type = "SIGNAL_STRENGTH"
+                confidence_model = "None"
 
                 # Probabilités affichées = BRUTES (cohérentes avec la décision)
                 # Phase 52 fix: index 1 = Stabilite, index 2 = Hausse
@@ -587,43 +573,55 @@ class AIService:
                 }
 
                 # ── 2. Calibration V13.2 (diagnostic uniquement) ────────────
-                calib_probs      = self.calibrator.predict_proba(X_last_clf[self.feature_names_calib])
-                calib_probs_list = [float(p) for p in calib_probs[0]]
-                # Phase 52 fix: index 1 = Stabilite, index 2 = Hausse
-                calibrated_probabilities = {
-                    "Baisse":    calib_probs_list[0],
-                    "Stabilite": calib_probs_list[1],
-                    "Hausse":    calib_probs_list[2],
-                }
-                calib_conf         = calib_probs_list[predicted_index]
-                calib_other_probs  = [p for i, p in enumerate(calib_probs_list) if i != predicted_index]
-                calibrated_margin  = calib_conf - max(calib_other_probs) if calib_other_probs else 0.0
+                if self.calibrator is not None:
+                    try:
+                        calib_probs      = self.calibrator.predict_proba(X_last_clf[self.feature_names_calib])
+                        calib_probs_list = [float(p) for p in calib_probs[0]]
+                        # Phase 52 fix: index 1 = Stabilite, index 2 = Hausse
+                        calibrated_probabilities = {
+                            "Baisse":    calib_probs_list[0],
+                            "Stabilite": calib_probs_list[1],
+                            "Hausse":    calib_probs_list[2],
+                        }
+                        calib_conf         = calib_probs_list[predicted_index]
+                        calib_other_probs  = [p for i, p in enumerate(calib_probs_list) if i != predicted_index]
+                        calibrated_margin  = calib_conf - max(calib_other_probs) if calib_other_probs else 0.0
 
-                if V13_3_2_DEBUG:
-                    logger.info("[CALIBRATED PROBABILITIES] (diagnostic — non utilisées pour la décision)")
-                    logger.info(f"  Baisse    (idx=0) = {calib_probs_list[0]:.4f}")
-                    logger.info(f"  Stabilite (idx=1) = {calib_probs_list[1]:.4f}")
-                    logger.info(f"  Hausse    (idx=2) = {calib_probs_list[2]:.4f}")
-                    logger.info(f"  Sum               = {sum(calib_probs_list):.4f}")
-
-                # ── 3. Niveau de confiance (sur probabilité BRUTE) ───────────
-                if raw_margin < 0.05:
-                    confidence_level = "Tres faible"
-                elif confidence_score >= 0.70:
-                    confidence_level = "Tres bonne"
-                elif confidence_score >= 0.60:
-                    confidence_level = "Bonne"
-                elif confidence_score >= 0.50:
-                    confidence_level = "Moyenne"
-                elif confidence_score >= 0.40:
-                    confidence_level = "Faible"
+                        if V13_3_2_DEBUG:
+                            logger.info("[CALIBRATED PROBABILITIES] (diagnostic — non utilisées pour la décision)")
+                            logger.info(f"  Baisse    (idx=0) = {calib_probs_list[0]:.4f}")
+                            logger.info(f"  Stabilite (idx=1) = {calib_probs_list[1]:.4f}")
+                            logger.info(f"  Hausse    (idx=2) = {calib_probs_list[2]:.4f}")
+                            logger.info(f"  Sum               = {sum(calib_probs_list):.4f}")
+                    except Exception as e:
+                        logger.error(f"Calibrator failed: {e}")
+                        calibrated_probabilities = display_probabilities
+                        calib_conf = confidence_score_raw
+                        calibrated_margin = raw_margin
                 else:
-                    confidence_level = "Tres faible"
+                    calibrated_probabilities = display_probabilities
+                    calib_conf = confidence_score_raw
+                    calibrated_margin = raw_margin
+
+                # ── 3. Niveau de confiance ───────────
+                if confidence_score < 0.60:
+                    confidence_level = "Faible"
+                elif confidence_score < 0.70:
+                    confidence_level = "Modérée"
+                elif confidence_score < 0.80:
+                    confidence_level = "Bonne"
+                elif confidence_score < 0.90:
+                    confidence_level = "Élevée"
+                else:
+                    confidence_level = "Très élevée"
 
                 logger.info(
-                    f"[{self.model_version_loaded}] Ticker={ticker} | Pred={predicted_class} | "
-                    f"Conf(raw)={confidence_score:.3f} | RawMargin={raw_margin:.3f} | "
-                    f"CalibConf={calib_conf:.3f} | CalibMargin={calibrated_margin:.3f} | Level={confidence_level}"
+                    f"[{self.model_version_loaded}] Ticker={ticker} | Pred={predicted_class} |\n"
+                    f"Pmax={p_max:.4f} |\n"
+                    f"Margin={margin:.4f} |\n"
+                    f"RawSignalStrength={raw_signal_strength:.4f} |\n"
+                    f"DisplayConfidence={display_confidence:.4f} |\n"
+                    f"Level={confidence_level}"
                 )
 
                 # ── Variables exportées vers le payload ──────────────────────
@@ -641,6 +639,9 @@ class AIService:
                     "calibrated_margin": calibrated_margin,
                     "confidence_score": confidence_score,
                     "confidence_level": confidence_level,
+                    "confidence_type": confidence_type,
+                    "confidence_model": confidence_model,
+                    "calib_conf": calib_conf,
                     "model_version": self.model_version_loaded,
                     "calibrator_version": "V13.2 (diagnostic)",
                 }
@@ -650,10 +651,10 @@ class AIService:
                     "margin": raw_margin,
                     "entropy": raw_entropy,
                     "confidence_level": confidence_level,
-                    "prediction_quality": f"V13.5 Argmax | Meta-Conf V13.7 | {ACTIVE_MODEL_VERSION}",
+                    "prediction_quality": f"V13.5 Argmax | Confidence=SIGNAL_STRENGTH | {ACTIVE_MODEL_VERSION}",
                     "confidence_reason": (
-                        f"P_correct(V13.7)={confidence_score:.3f} | "
-                        f"RawMargin={raw_margin:.3f} | Level={confidence_level}"
+                        f"SignalStrength={confidence_score:.3f} | "
+                        f"RawMargin={margin:.3f} | Level={confidence_level}"
                     ),
                     "confidence_type": confidence_type,
                     "confidence_model": confidence_model
