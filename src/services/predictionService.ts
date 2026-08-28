@@ -2,8 +2,8 @@
  * Prediction service — wraps mock data and exposes the same interface as the real API.
  * Swap the mock implementations for real `apiFetch` calls when backend is ready.
  */
-import type { Stock, HistoryEntry, Alert, ForecastPoint, SectorStats } from "../types";
-import { HISTORY_ENTRIES, ALERTS, generateForecast, SECTORS_LIST } from "../utils/data";
+import type { Stock, HistoryEntry, ForecastPoint, SectorStats } from "../types";
+import { HISTORY_ENTRIES, generateForecast, SECTORS_LIST } from "../utils/data";
 
 export interface AIPrediction {
   ticker: string;
@@ -53,7 +53,6 @@ export interface AIPrediction {
 }
 
 let _stocks: Stock[] = [];
-let _alerts = [...ALERTS];
 
 // ── Stocks ────────────────────────────────────────────────────────────────────
 
@@ -80,16 +79,7 @@ export function getHistoryByTicker(ticker: string): HistoryEntry[] {
   return HISTORY_ENTRIES.filter(e => e.ticker === ticker);
 }
 
-// ── Alerts ────────────────────────────────────────────────────────────────────
 
-export function getAlerts(): Alert[] {
-  return _alerts;
-}
-
-export function dismissAlert(id: string): Alert[] {
-  _alerts = _alerts.filter(a => a.id !== id);
-  return _alerts;
-}
 
 // ── Predictions ───────────────────────────────────────────────────────────────
 

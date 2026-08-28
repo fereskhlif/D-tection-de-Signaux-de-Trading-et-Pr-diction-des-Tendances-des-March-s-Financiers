@@ -55,14 +55,6 @@ export interface HistoryEntry {
   confidence: number;
 }
 
-export interface Alert {
-  id: string;
-  ticker: string;
-  from: Prediction;
-  to: Prediction;
-  timeAgo: string;
-  confidence: number;
-}
 
 export interface SectorStats {
   sector: Sector;

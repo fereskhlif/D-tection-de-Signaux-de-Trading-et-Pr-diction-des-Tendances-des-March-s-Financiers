@@ -2,11 +2,10 @@ import { useState, lazy, Suspense } from "react";
 import {
   LayoutDashboard, BarChart2, Layers, Target,
   Building2, Clock, Activity,
-  Bell, X, TrendingUp, TrendingDown, Minus, Menu,
+  X, TrendingUp, TrendingDown, Minus, Menu,
   LogIn, Star, Crown, LogOut, RefreshCw,
 } from "lucide-react";
-import { ALERTS } from "./utils/data";
-import type { Alert, Plan } from "./types";
+import type { Plan } from "./types";
 import { StocksProvider, useStocksContext } from "./context/StocksContext";
 
 // ── Lazy pages ────────────────────────────────────────────────────────────────
@@ -145,8 +144,7 @@ function App() {
   const [userName, setUserName] = useState("Utilisateur");
   const [plan, setPlan] = useState<Plan>("visitor");
   const [authView, setAuthView] = useState<"login" | "register" | null>(null);
-  const [alerts, setAlerts] = useState<Alert[]>(ALERTS);
-  const [bellOpen, setBellOpen] = useState(false);
+
   const [favorites, setFavorites] = useState<string[]>(["AAPL", "NVDA", "NVO"]);
 
   const handleLogin = (name: string, plan: Plan) => {
@@ -161,8 +159,7 @@ function App() {
     setUserName("Utilisateur");
   };
 
-  const dismissAlert = (id: string) => setAlerts(prev => prev.filter(a => a.id !== id));
-  const dismissAll = () => setAlerts([]);
+
 
   const { title, sub } = PAGE_TITLES[page];
 
@@ -270,58 +267,6 @@ function App() {
           {/* Bouton Actualiser */}
           <RefreshButton />
 
-          {/* Bell (logged in only) */}
-          {isLoggedIn && (
-            <div className="relative">
-              <button
-                onClick={() => setBellOpen(o => !o)}
-                className="relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors"
-              >
-                <Bell size={16} className="text-muted-foreground" />
-                {alerts.length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger" />
-                )}
-              </button>
-
-              {/* Dropdown */}
-              {bellOpen && (
-                <div className="absolute right-0 top-10 z-50 w-80 bg-panel border border-border rounded-xl shadow-2xl overflow-hidden">
-                  <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
-                    <span className="text-xs font-semibold text-foreground">Notifications</span>
-                    <button onClick={dismissAll} className="text-[10px] text-muted-foreground hover:text-danger transition-colors">
-                      Tout effacer
-                    </button>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto">
-                    {alerts.length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-6">Aucune notification</p>
-                    )}
-                    {alerts.map(alert => (
-                      <div key={alert.id} className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border hover:bg-card-hover transition-colors group">
-                        <div className="mt-0.5">
-                          <PredIcon p={alert.to} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-mono font-bold text-foreground">{alert.ticker}</p>
-                          <p className="text-[10.5px] text-muted-foreground">
-                            {alert.from} → <span className={alert.to === "Hausse" ? "text-success" : alert.to === "Baisse" ? "text-danger" : "text-warning"}>{alert.to}</span>
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{alert.timeAgo} · {alert.confidence}%</p>
-                        </div>
-                        <button
-                          onClick={() => dismissAlert(alert.id)}
-                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-danger transition-all"
-                        >
-                          <X size={11} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Login button (not logged in) */}
           {!isLoggedIn && (
             <button
@@ -370,10 +315,7 @@ function App() {
         />
       )}
 
-      {/* Bell dropdown backdrop */}
-      {bellOpen && (
-        <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
-      )}
+
     </div>
   );
 }

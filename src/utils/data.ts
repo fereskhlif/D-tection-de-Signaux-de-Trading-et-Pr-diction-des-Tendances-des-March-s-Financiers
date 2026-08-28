@@ -16,7 +16,7 @@
  * Les données financières réelles viennent exclusivement du backend.
  * NE PAS remettre de valeurs codées en dur ici.
  */
-import type { HistoryEntry, Alert, PricePoint, ForecastPoint } from "../types";
+import type { HistoryEntry, PricePoint, ForecastPoint } from "../types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRNG — Conservé pour les intervalles de confiance dans la page Prédictions
@@ -99,17 +99,7 @@ export const HISTORY_ENTRIES: HistoryEntry[] = [
   { id: "h18", ticker: "ETH",  date: "2 août",  predicted: "Hausse",     actual: "Stabilité", confidence: 68 },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Alertes de notifications (statiques — pas de système de push en temps réel)
-// ─────────────────────────────────────────────────────────────────────────────
 
-export const ALERTS: Alert[] = [
-  { id: "a1", ticker: "AAPL", from: "Stabilité", to: "Hausse",    timeAgo: "2h",  confidence: 84 },
-  { id: "a2", ticker: "GS",   from: "Stabilité", to: "Baisse",    timeAgo: "5h",  confidence: 71 },
-  { id: "a3", ticker: "NEE",  from: "Hausse",    to: "Baisse",    timeAgo: "1j",  confidence: 65 },
-  { id: "a4", ticker: "NVO",  from: "Hausse",    to: "Hausse",    timeAgo: "1j",  confidence: 88 },
-  { id: "a5", ticker: "BTC",  from: "Baisse",    to: "Hausse",    timeAgo: "2j",  confidence: 78 },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Liste des secteurs (noms uniquement — composition dans src/config/sectors.ts)

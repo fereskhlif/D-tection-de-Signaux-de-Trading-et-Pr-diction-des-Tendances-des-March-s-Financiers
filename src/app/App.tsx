@@ -226,16 +226,7 @@ const SECTOR_COLORS: Record<string, string> = {
   Industrie: "#f59e0b", "Services publics": "#f97316", "Crypto-monnaies": "#f97316",
 };
 
-const ALERTS_DATA = [
-  { id: 1, ticker: "AAPL", from: "Stabilité" as Prediction, to: "Hausse" as Prediction, ago: "2h", conf: 84 },
-  { id: 2, ticker: "GS", from: "Stabilité" as Prediction, to: "Baisse" as Prediction, ago: "5h", conf: 71 },
-  { id: 3, ticker: "NEE", from: "Hausse" as Prediction, to: "Baisse" as Prediction, ago: "1j", conf: 65 },
-  { id: 4, ticker: "NVO", from: "Hausse" as Prediction, to: "Hausse" as Prediction, ago: "1j", conf: 88 },
-  { id: 5, ticker: "CAT", from: "Stabilité" as Prediction, to: "Baisse" as Prediction, ago: "2j", conf: 69 },
-  { id: 6, ticker: "MSFT", from: "Stabilité" as Prediction, to: "Hausse" as Prediction, ago: "3j", conf: 79 },
-  { id: 7, ticker: "BTC", from: "Baisse" as Prediction, to: "Hausse" as Prediction, ago: "3j", conf: 78 },
-  { id: 8, ticker: "ETH", from: "Stabilité" as Prediction, to: "Hausse" as Prediction, ago: "4j", conf: 71 },
-];
+
 const HISTORY_ENTRIES = [
   { id: 1, ticker: "AAPL", date: "5 juil.", pred: "Stabilité" as Prediction, conf: 71, actual: "Hausse" as Prediction },
   { id: 2, ticker: "NVDA", date: "5 juil.", pred: "Hausse" as Prediction, conf: 88, actual: "Hausse" as Prediction },
@@ -382,75 +373,7 @@ function Sparkline({ values, color, id, width = 72, height = 32 }: { values: num
 
 
 
-// ─── NOTIFICATION PANEL ───────────────────────────────────────────────────────
 
-function NotificationPanel({ alerts, onDeleteAlert, onClose }: {
-  alerts: typeof ALERTS_DATA;
-  onDeleteAlert: (id: number) => void;
-  onClose: () => void;
-}) {
-  return (
-    <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 380, background: C.panel, borderLeft: `1px solid ${C.border}`, zIndex: 500, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px", borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Bell size={16} style={{ color: C.blue }} />
-          <span style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>Notifications</span>
-          {alerts.length > 0 && <span style={{ background: C.red, color: "white", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 10 }}>{alerts.length}</span>}
-        </div>
-        <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: C.muted, padding: 4, display: "flex", borderRadius: 4 }}>
-          <X size={16} />
-        </button>
-      </div>
-
-      {/* Alerts list */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
-        {alerts.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12, opacity: 0.5 }}>
-            <Bell size={32} style={{ color: C.muted }} />
-            <span style={{ color: C.muted, fontSize: 13 }}>Aucune notification</span>
-          </div>
-        ) : (
-          alerts.map(alert => {
-            const isDown = alert.to === "Baisse";
-            return (
-              <div key={alert.id} style={{ background: C.card, border: `1px solid ${isDown ? C.red + "33" : C.green + "33"}`, borderRadius: 8, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 8, background: pb(alert.to), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {isDown ? <TrendingDown size={15} style={{ color: C.red }} /> : <TrendingUp size={15} style={{ color: C.green }} />}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontFamily: "JetBrains Mono,monospace", fontWeight: 700, color: C.text, fontSize: 13 }}>{alert.ticker}</span>
-                    <Badge p={alert.from} /><span style={{ color: C.muted, fontSize: 10 }}>→</span><Badge p={alert.to} />
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: C.muted, fontSize: 11 }}>Conf. <span style={{ color: pc(alert.to), fontFamily: "JetBrains Mono,monospace" }}>{alert.conf}%</span></span>
-                    <span style={{ color: C.dim, fontSize: 10 }}>•</span>
-                    <span style={{ color: C.muted, fontSize: 11 }}>Il y a {alert.ago}</span>
-                  </div>
-                </div>
-                <button onClick={() => onDeleteAlert(alert.id)} title="Supprimer" style={{ background: "transparent", border: "none", cursor: "pointer", color: C.dim, padding: "2px", display: "flex", flexShrink: 0, borderRadius: 4 }}
-                  onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = C.red)}
-                  onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = C.dim)}>
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Footer */}
-      {alerts.length > 0 && (
-        <div style={{ padding: "12px 20px", borderTop: `1px solid ${C.border}` }}>
-          <button onClick={() => alerts.forEach(a => onDeleteAlert(a.id))} style={{ width: "100%", padding: "8px 0", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.muted, fontSize: 12, cursor: "pointer" }}>
-            Tout marquer comme lu
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── CHART COMPONENTS ─────────────────────────────────────────────────────────
 
@@ -1985,64 +1908,6 @@ function ComparisonPage({ initialTickers = ["AAPL", "MSFT", "NVDA"] }: { initial
 }
 
 
-// ─── ALERTS PAGE ──────────────────────────────────────────────────────────────
-
-function AlertsPage({ isLoggedIn, onLogin, activeAlerts, onDeleteAlert }: {
-  isLoggedIn: boolean; onLogin: () => void;
-  activeAlerts: typeof ALERTS_DATA; onDeleteAlert: (id: number) => void;
-}) {
-  const [thresholds, setThresholds] = useState<Record<string, number>>(Object.fromEntries(STOCKS.map(s => [s.ticker, 75])));
-  const maxAlerts = Infinity;
-
-  if (!isLoggedIn) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <PageHeader title="Alertes & Notifications" sub="Changements de prédiction récents et seuils configurables" />
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 32px" }}>
-          <div style={{ textAlign: "center", maxWidth: 400 }}>
-            <div style={{ width: 64, height: 64, borderRadius: 16, background: C.blueFaint, border: `1px solid ${C.blue}33`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}><Bell size={28} style={{ color: C.blue }} /></div>
-            <h2 style={{ color: C.text, fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Alertes personnalisées</h2>
-            <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.7, margin: "0 0 28px" }}>Connectez-vous pour configurer des alertes et recevoir des notifications en temps réel.</p>
-            <button onClick={onLogin} style={{ padding: "12px 32px", borderRadius: 8, border: "none", background: C.blue, color: "white", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}><LogIn size={15} />Se connecter pour continuer</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <PageHeader title="Alertes & Notifications" sub="Changements de prédiction récents et seuils configurables"
-        right={<div style={{ fontSize: 11, color: C.muted, display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: C.red }} />{activeAlerts.length} notification{activeAlerts.length !== 1 ? "s" : ""}</div>}
-      />
-      <div style={{ flex: 1, padding: "24px 32px", display: "grid", gridTemplateColumns: "1fr 340px", gap: 20, alignItems: "start" }}>
-        <div>
-          {activeAlerts.map((alert, idx) => {
-            const locked = false;
-            const isDown = alert.to === "Baisse", isHigh = STOCKS.find(s => s.ticker === alert.ticker)!.confidence >= thresholds[alert.ticker];
-            return (
-              <div key={alert.id} style={{ background: C.card, border: `1px solid ${locked ? C.border : isHigh ? pc(alert.to) + "44" : C.border}`, borderRadius: 8, padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, marginBottom: 10, opacity: locked ? 0.5 : 1, position: "relative", overflow: "hidden" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: pb(alert.to), display: "flex", alignItems: "center", justifyContent: "center" }}>{isDown ? <TrendingDown size={16} style={{ color: C.red }} /> : <TrendingUp size={16} style={{ color: C.green }} />}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ fontFamily: "JetBrains Mono,monospace", fontWeight: 700, color: C.text, fontSize: 14 }}>{alert.ticker}</span><Badge p={alert.from} /><span style={{ color: C.muted, fontSize: 11 }}>→</span><Badge p={alert.to} /></div>
-                  <div style={{ fontSize: 11, color: C.muted }}>Conf. : <span style={{ color: pc(alert.to), fontFamily: "JetBrains Mono,monospace" }}>{alert.conf}%</span>{!locked && isHigh && <span style={{ marginLeft: 8, color: C.amber, fontSize: 10.5 }}><AlertTriangle size={10} style={{ display: "inline", verticalAlign: "middle" }} />Seuil dépassé</span>}</div>
-                </div>
-                <div style={{ color: C.muted, fontSize: 10.5 }}>Il y a {alert.ago}</div>
-                <button onClick={() => onDeleteAlert(alert.id)} style={{ background: "transparent", border: "none", cursor: "pointer", color: C.dim, padding: 2, display: "flex", borderRadius: 4 }} onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = C.red)} onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = C.dim)}><Trash2 size={13} /></button>
-              </div>
-            );
-          })}
-        </div>
-        <div>
-          <div style={{ color: C.muted, fontSize: 10.5, marginBottom: 10, letterSpacing: "0.08em" }}>SEUILS PAR ACTION</div>
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
-            {STOCKS.map((s, i, arr) => <div key={s.ticker} style={{ padding: "10px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontFamily: "JetBrains Mono,monospace", fontSize: 12, color: C.text, fontWeight: 600, minWidth: 42 }}>{s.ticker}</span><div style={{ flex: 1, height: 4, borderRadius: 2, background: C.dim, cursor: "pointer" }} onClick={e => { const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect(), v = Math.round(((e.clientX - rect.left) / rect.width) * 100); setThresholds(t => ({ ...t, [s.ticker]: Math.max(50, Math.min(99, v)) })); }}><div style={{ width: `${thresholds[s.ticker]}%`, height: "100%", borderRadius: 2, background: C.blue }} /></div><span style={{ fontFamily: "JetBrains Mono,monospace", fontSize: 11, color: C.text, minWidth: 32, textAlign: "right" }}>{thresholds[s.ticker]}%</span></div>)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── SECTOR PAGE ──────────────────────────────────────────────────────────────
 
@@ -2143,7 +2008,7 @@ function SectorPage({ onCompare }: { onCompare: (tickers: string[]) => void }) {
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 10.5 }}><span style={{ color: C.muted }}>Conf. moy.</span><span style={{ color: C.text, fontFamily: "JetBrains Mono,monospace" }}>{avgConf.toFixed(0)}%</span></div>
-                  <div style={{ marginBottom: 12 }}>{ss.map(s => { return <div key={s.ticker} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderTop: `1px solid ${C.border}` }}><span style={{ color: C.text, fontFamily: "JetBrains Mono,monospace", fontSize: 12, fontWeight: 600 }}>{s.ticker}</span><div style={{ display: "flex", alignItems: "center", gap: 7 }}><span style={{ color: s.chg90d >= 0 ? C.green : C.red, fontSize: 11, fontFamily: "JetBrains Mono,monospace" }}>{fPct(s.chg90d)}</span><Badge p={s.prediction} /></div></div>; })}</div>
+                  <div style={{ marginBottom: 12 }}>{ss.map(s => <div key={s.ticker} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderTop: `1px solid ${C.border}` }}><span style={{ color: C.text, fontFamily: "JetBrains Mono,monospace", fontSize: 12, fontWeight: 600 }}>{s.ticker}</span><div style={{ display: "flex", alignItems: "center", gap: 7 }}><span style={{ color: s.chg90d >= 0 ? C.green : C.red, fontSize: 11, fontFamily: "JetBrains Mono,monospace" }}>{fPct(s.chg90d)}</span><Badge p={s.prediction} /></div></div>)}</div>
                   <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10, display: "flex", gap: 6 }}>
                     <button onClick={() => onCompare(ss.map(s => s.ticker))} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 10.5, padding: "6px 8px", borderRadius: 5, border: `1px solid ${C.border}`, background: "transparent", color: C.muted, cursor: "pointer" }} onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.blue; (e.currentTarget as HTMLButtonElement).style.color = C.blue; }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.muted; }}><GitCompare size={11} />Comparer</button>
                     <button onClick={() => setOpenAlerts(prev => { const next = new Set(prev); next.has(sector) ? next.delete(sector) : next.add(sector); return next; })} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10.5, padding: "6px 10px", borderRadius: 5, border: `1px solid ${isAlertOpen ? C.amber : C.border}`, background: isAlertOpen ? C.amberFaint : "transparent", color: isAlertOpen ? C.amber : C.muted, cursor: "pointer" }}><Bell size={11} />Alerte</button>
@@ -2190,9 +2055,6 @@ export default function App() {
   // Premium modal
   
 
-  // Notifications / alerts
-  const [activeAlerts, setActiveAlerts] = useState([...ALERTS_DATA]);
-  const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -2277,24 +2139,14 @@ export default function App() {
   if (authView === "forgot-password") return <ForgotPasswordPage onGoLogin={() => setAuthView("login")} onContinueAsGuest={() => setAuthView(null)} />;
   if (authView === "reset-password") return <ResetPasswordPage onGoLogin={() => setAuthView("login")} onContinueAsGuest={() => setAuthView(null)} />;
 
-  const unreadCount = activeAlerts.length;
-
   return (
     <div style={{ display: "flex", background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "Inter,sans-serif" }}>
       <Sidebar active={activeNav} onNav={navigate} isLoggedIn={isLoggedIn} userName={userName} onLogin={() => setAuthView("login")} onSignup={() => setAuthView("signup")} onLogout={handleLogout} />
 
       <main style={{ flex: 1, overflowY: "auto", minWidth: 0, position: "relative" }}>
-        {/* Global notification bell — visible when logged in */}
-        {isLoggedIn && (
-          <button onClick={() => setNotifOpen(v => !v)} style={{ position: "fixed", top: 16, right: 20, zIndex: 400, width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", background: notifOpen ? C.blueFaint : C.panel, border: `1px solid ${notifOpen ? C.blue : C.border}`, borderRadius: 8, cursor: "pointer", transition: "all 0.15s" }}>
-            <Bell size={16} style={{ color: notifOpen ? C.blue : C.muted }} />
-            {unreadCount > 0 && <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: C.red, border: `2px solid ${C.bg}` }} />}
-          </button>
-        )}
-
         {/* Dev plan toggle */}
         {isLoggedIn && (
-          <div style={{ position: "fixed", bottom: 16, right: notifOpen ? 400 : 16, zIndex: 100, display: "flex", gap: 6, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontSize: 11, transition: "right 0.2s" }}>
+          <div style={{ position: "fixed", bottom: 16, right: 16, zIndex: 100, display: "flex", gap: 6, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", fontSize: 11 }}>
             <span style={{ color: C.muted }}>Plan démo :</span>
 
           </div>
@@ -2311,10 +2163,7 @@ export default function App() {
 
       </main>
 
-      {/* Notification slide panel */}
-      {isLoggedIn && notifOpen && (
-        <NotificationPanel alerts={activeAlerts} onDeleteAlert={handleDeleteAlert} onClose={() => setNotifOpen(false)} />
-      )}
+
 
       {/* Modals */}
       {authModalCtx && <AuthRequiredModal context={authModalCtx} onLogin={() => { setAuthModalCtx(null); setAuthView("login"); }} onSignup={() => { setAuthModalCtx(null); setAuthView("signup"); }} onClose={() => setAuthModalCtx(null)} />}
